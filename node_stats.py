@@ -10,10 +10,6 @@ port = "18089"
 url_base = "http://192.168.1.74:{}/{}"
 url = url_base.format(port, "json_rpc")
 url_not = url_base.format(port, "get_transactions")
-
-recently_fetched_blocks = {}
-
-init_done = False
 v_dpi = 600
 
 
@@ -66,14 +62,6 @@ def get_block_hash():
     return make_request(payload)["result"]
 
 
-def get_num_tx_for_block(block_height):
-    tx_num = -1
-    current = get_block(block_height)
-    if block:
-        tx_num = current["result"]["block_header"]["num_txes"]
-    return tx_num
-
-
 def get_block_headers_range(s_start, e_end):
     result = ""
     if start >= 0 and e_end < get_height():
@@ -88,63 +76,6 @@ def get_block_headers_range(s_start, e_end):
         }
         result = make_request(payload)
     return result
-
-
-def get_block(block_height):
-    if block_height not in recently_fetched_blocks:
-        payload = {
-            "jsonrpc": "2.0",
-            "id": "0",
-            "method": "get_block",
-            "params": {
-                "height": block_height
-            }
-        }
-        block = make_request(payload)
-        recently_fetched_blocks[block_height] = block
-    return recently_fetched_blocks[block_height]
-
-
-def tx_for_interval_list(start, end):
-    sum_tx = []
-    for i in range(start, end):
-        sum_tx.append(get_num_tx_for_block(i))
-    return sum_tx
-
-
-def tx_for_last_n_blocks(n):
-    end = get_height()
-    start = end - n
-    results = tx_for_interval_list(start, end)
-    sum = 0
-    for result in results:
-        sum = sum + result
-    return sum
-
-
-def get_interval_reward(start, end):
-    total_reward = 0
-    for i in range(start, end):
-        total_reward += get_block(i)["result"]["block_header"]["reward"]
-    return total_reward
-
-
-def get_avg_tx_size(s_start, e_end):
-    size_sum = 0
-    for i in range(s_start, e_end):
-        block = get_block(i)
-        txs = []
-        if "tx_hashes" in block["result"]:
-            for tx in block["result"]["tx_hashes"]:
-                txs.append(tx)
-
-        transactions = get_transaction(txs)
-        if "txs" in transactions:
-            for transaction in transactions["txs"]:
-                current = transaction["as_hex"]
-                current = len(current) / 2
-                size_sum += current
-    return size_sum
 
 
 def get_transaction(hashes):
