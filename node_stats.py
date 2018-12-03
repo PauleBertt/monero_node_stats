@@ -112,7 +112,7 @@ def load_from_bin():
         "blocks": [],
     }
 
-    tmp_file = open("tmp.dat","rb")
+    tmp_file = open("checkpoints.dat","rb")
     tmp_dat = tmp_file.read()
     tmp_file.close()
     top = 0
