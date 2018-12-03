@@ -1,12 +1,13 @@
 import os
 import json
 import sys
+from struct import unpack, pack
 
 import requests
 import matplotlib.pyplot as plt
 
 port = "18089"
-url_base = "http://node.moneroworld.com:{}/{}"
+url_base = "http://192.168.1.74:{}/{}"
 url = url_base.format(port, "json_rpc")
 url_not = url_base.format(port, "get_transactions")
 
@@ -162,16 +163,51 @@ def get_transaction(hashes):
         return []
 
 
+def write_as_bin(d_data):
+    tmp_file = open("checkpoints.dat", "wb")
+    for block in d_data["blocks"]:
+        tmp_file.write(pack("I", block["h"]))
+        tmp_file.write(pack("I", block["b"]))
+        tmp_file.write(pack("Q", block["d"]))
+        tmp_file.write(pack("I", block["t"]))
+        tmp_file.write(pack("H", block["n"]))
+    tmp_file.close()
+
+
+def load_from_bin():
+    outer = {
+        "top": 0,
+        "name:": "monero-checkpoints",
+        "blocks": [],
+    }
+
+    tmp_file = open("tmp.dat","rb")
+    tmp_dat = tmp_file.read()
+    tmp_file.close()
+    top = 0
+    for i in range(0,len(tmp_dat),22):
+        line = tmp_dat[i:i+22]
+        b_tuple = unpack("IIQIH",line)
+        top = b_tuple[0]
+        inner = {
+            "h": b_tuple[0],
+            "b": b_tuple[1],
+            "d": b_tuple[2],
+            "t": b_tuple[3],
+            "n": b_tuple[4],
+        }
+        outer["blocks"].append(inner)
+    outer["top"] = top
+    return outer
+
+
 def write_checkpoints(end):
-    filename = "checkpoints.json"
+    filename = "checkpoints.dat"
     # load existing
     top = -1
     if os.path.isfile(filename):
-        read = open(filename, "r")
-        outer = json.load(read)
+        outer = load_from_bin()
         top = outer["top"]
-        read.close()
-
     else:
         outer = {
             "top": 0,
@@ -197,9 +233,7 @@ def write_checkpoints(end):
             }
             outer["blocks"].append(inner)
     outer["top"] = best
-    file = open("checkpoints.json", "w")
-    file.write(json.dumps(outer))
-    file.close()
+    write_as_bin(outer)
     return outer
 
 
