@@ -6,8 +6,8 @@ from struct import unpack, pack
 import requests
 import matplotlib.pyplot as plt
 
-port = "18089"
-url_base = "http://192.168.1.74:{}/{}"
+port = "18081"
+url_base = "http://node.xmr.to:{}/{}"
 url = url_base.format(port, "json_rpc")
 url_not = url_base.format(port, "get_transactions")
 v_dpi = 600
